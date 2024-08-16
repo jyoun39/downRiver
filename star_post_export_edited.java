@@ -16,51 +16,6 @@ import star.meshing.*;
 public class star_post_export_edited extends StarMacro {
 
   public void execute() {
-    // Access the active simulation
-    Simulation simulation_0 = getActiveSimulation();
-
-    // Retrieve the GlobalParameterManager
-    GlobalParameterManager globalParamManager = simulation_0.getGlobalParameterManager();
-
-    // Obtain all parameters
-    Collection<Object> parameters = globalParamManager.getChildren();
-
-    // Prepare the CSV file for writing
-    File csvFile = new File("C:\\Users\\younj\\Downloads\\downRiver\\parameters.csv");
-
-    try (PrintWriter writer = new PrintWriter(csvFile)) {
-        // Write CSV header
-        writer.println("Parameter Name, Quantity");
-
-        for (Object obj : parameters) {
-            // Print the details of each object
-            simulation_0.println("Object: " + obj.toString());
-
-            GlobalParameterBase parameter = getGlobalParameterByName(globalParamManager, obj.toString());
-
-            if (parameter != null) {
-                // Get the quantity associated with the parameter
-                CompiledValueFunction quantity = parameter.getQuantity();
-
-                // Write to CSV
-                if (quantity != null) {
-                    writer.println(parameter.getPresentationName() + ", " + quantity.toString());
-                    simulation_0.println("Quantity: " + quantity.toString());
-                } else {
-                    writer.println(parameter.getPresentationName() + ", No quantity available");
-                    simulation_0.println("No quantity available for this parameter.");
-                }
-            } else {
-                writer.println(obj.toString() + ", Parameter not found");
-                simulation_0.println("Parameter not found.");
-            }
-        }
-        simulation_0.println("Data successfully exported to " + csvFile.getAbsolutePath());
-    } catch (IOException e) {
-        simulation_0.println("Error writing to CSV file: " + e.getMessage());
-        e.printStackTrace();
-    }
-	
     try{
 		// String batch_file = "/home/ga10025834/project/MQ9B_STOL/case_matrix.csv";
 		String batch_file = "/home/ga10028979/project/stIIpod/sim/dev/stIIpod_batch.csv";
@@ -149,6 +104,52 @@ private void post_process(Batch sheet, Simulation simulation_0) {
     plots_name.mkdir();
 	File monitors_name = new File(resolvePath(case_path+"/"+case_name+"/Monitors"));
     monitors_name.mkdir();
+
+	// Retrieve the GlobalParameterManager
+	GlobalParameterManager globalParamManager = simulation_0.getGlobalParameterManager();
+
+	// Obtain all parameters
+	Collection<Object> parameters = globalParamManager.getChildren();
+
+	// Prepare the CSV file for writing
+	File csvFile = new File(case_path+"/"+case_name+"/Parameters/parameters.csv");
+
+	try (PrintWriter writer = new PrintWriter(csvFile)) {
+		Set<String> desiredParameterNames = new HashSet<>(Arrays.asList("Scalar 1", "Scalar 2"));
+		simulation_0.println(desiredParameterNames);
+
+		// Write CSV header
+		writer.println("Parameter Name, Quantity");
+
+		for (Object obj : parameters) {
+			// Print the details of each object
+			GlobalParameterBase parameter = getGlobalParameterByName(globalParamManager, obj.toString());
+
+			if (parameter != null) {
+				String parameterName = parameter.getPresentationName();
+
+				// Only collect and write parameters that are in the desired set
+				if (desiredParameterNames.contains(parameterName)) {
+					// Get the quantity associated with the parameter
+					CompiledValueFunction quantity = parameter.getQuantity();
+					// Write to CSV
+					if (quantity != null) {
+						writer.println(parameterName + ", " + quantity.toString());
+						simulation_0.println("Parameter: "+parameterName);
+						simulation_0.println("Quantity: "+quantity.toString());
+					} else {
+						writer.println(parameterName + ", No quantity available");
+					}
+				}
+			} else {
+				writer.println(obj.toString() + ", Parameter not found");
+			}
+		}
+		simulation_0.println("Data successfully exported to " + csvFile.getAbsolutePath());
+	} catch (IOException e) {
+		simulation_0.println("Error writing to CSV file: " + e.getMessage());
+		e.printStackTrace();
+	}
 
 	//Export Monitors
 	//Export Plots
